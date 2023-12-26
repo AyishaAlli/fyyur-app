@@ -2,6 +2,7 @@ node_modules
 
 # Environments
 .env
+env-3.9/
 .venv
 env/
 venv/
@@ -13,3 +14,5 @@ venv.bak/
 __pycache__/
 *.py[cod]
 *$py.class
+
+config.py
