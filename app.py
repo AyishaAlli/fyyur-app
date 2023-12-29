@@ -80,6 +80,7 @@ def create_venue_submission():
       venue.website_link = form.website_link.data
       venue.genres = request.form.getlist('genres')
       venue.facebook_link = form.facebook_link.data
+      venue.image_link = form.image_link.data
       venue.seeking_talent = form.seeking_talent.data
       venue.seeking_description = form.seeking_description.data
 
@@ -121,30 +122,17 @@ def venues():
 #  Search Venue 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-  search_query = request.form.get("search_term", "")
+  search_term = request.form.get('search_term')
+  venues = Venue.query.filter(Venue.name.ilike(f'%{search_term}%')).all()
 
-  search_response = {"count": 0, "data": []}
-
-  fields = ["id", "name"]
-  venue_search_results = (
-    db.session.query(Venue)
-    .filter(Venue.name.ilike(f"%{search_query}%"))
-    .options(load_only(*fields))
-    .all()
-  )
-
-  search_response["count"] = len(venue_search_results)
-
-  for result in venue_search_results:
-        item = {
-            "id": result.id,
-            "name": result.name,
-        }
-        search_response["data"].append(item)
+  results = {
+    "count": len(venues),
+    "data": [{'id': venue.id, 'name': venue.name } for venue in venues]
+  }
 
   return render_template(
         "pages/search_venues.html",
-        results=search_response,
+        results=results,
         search_term=request.form.get("search_term", ""),
     )
 
@@ -153,16 +141,18 @@ def search_venues():
 def show_venue(venue_id):
     venue = Venue.query.get(venue_id)
 
+    # Checks start time to differentiate between past and upcoming event 
+    # Filters through and seperates them and storesin a variable 
     get_past_shows = list(filter(lambda x: x.start_time < datetime.today(), venue.shows))
     get_upcoming_shows = list(filter(lambda x: x.start_time >= datetime.today(), venue.shows))
-    past_shows = list(map(lambda x: x.show_artist(), get_past_shows))
-    upcoming_shows = list(map(lambda x: x.show_artist(), get_upcoming_shows))
 
+    # Maps through past/upcoming shows and fills in the details of the show, including the venue image, hence calling the show_artist() func
+    venue.past_shows = list(map(lambda x: x.show_artist(), get_past_shows))
+    venue.upcoming_shows = list(map(lambda x: x.show_artist(), get_upcoming_shows))
     
-    venue.past_shows = past_shows
-    venue.upcoming_shows = upcoming_shows
-    venue.past_shows_count = len(past_shows)
-    venue.upcoming_shows_count = len(upcoming_shows)
+    # Gets count to populate page
+    venue.past_shows_count = len(venue.past_shows)
+    venue.upcoming_shows_count = len(venue.upcoming_shows)
 
     # Formatting 
     venue.genres = venue.genres.replace('{', '').replace('}', '').split(',')
@@ -174,7 +164,7 @@ def show_venue(venue_id):
 def edit_venue(venue_id):
   form = VenueForm()
 
-  
+  # Pre populates fields so the user doesnt have to type everything again, they can just make edits
   venue = Venue.query.get(venue_id)
   form.name.data = venue.name
   venue.name = form.name.data
@@ -189,27 +179,40 @@ def edit_venue(venue_id):
   form.seeking_talent.data = venue.seeking_talent
   form.seeking_description.data  = venue.seeking_description
 
-  venue = {
-    "id": venue_id,
-    "name": venue.name,
-    "genres": venue.genres,
-    "city": venue.city,
-    "state": venue.state,
-    "address": venue.address,
-    "phone": venue.phone,
-    "website_link": venue.website_link,
-    "facebook_link": venue.facebook_link,
-    "seeking_talent": venue.seeking_talent,
-    "seeking_description":  venue.seeking_description,
-    "image_link":  venue.image_link,
-  }
   return render_template('forms/edit_venue.html', form=form, venue=venue)
 
-# NOT DONE YET!!!!!!!!
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
-  # TODO: take values from the form submitted, and update existing
-  # venue record with ID <venue_id> using the new attributes
+  form = VenueForm(request.form)
+
+  try:
+      venue = Venue.query.get(venue_id)
+      venue.name = form.name.data
+      venue.city = form.city.data
+      venue.state = form.state.data
+      venue.address = form.address.data
+      venue.phone = form.phone.data
+      venue.website_link = form.website_link.data
+      venue.genres = request.form.getlist('genres')
+      venue.facebook_link = form.facebook_link.data
+      venue.image_link = form.image_link.data
+      venue.seeking_talent = form.seeking_talent.data
+      venue.seeking_description = form.seeking_description.data
+
+      db.session.add(venue)
+      db.session.commit()
+
+      flash(request.form['name'] + ' was successfully updated!')
+
+  except Exception as e:
+    db.session.rollback()
+    flash('An error occurred. ' + request.form['name'] + ' could not be updated.')
+
+  finally:
+    db.session.close()
+
+  
+  
   return redirect(url_for('show_venue', venue_id=venue_id))
 
 #  Delete Venue 
@@ -285,30 +288,17 @@ def artists():
 #  Search Artists
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
-  search_query = request.form.get("search_term", "")
+  search_term = request.form.get('search_term')
+  artists = Artist.query.filter(Artist.name.ilike(f'%{search_term}%')).all()
 
-  search_response = {"count": 0, "data": []}
-
-  fields = ["id", "name"]
-  artist_search_results = (
-    db.session.query(Artist)
-    .filter(Artist.name.ilike(f"%{search_query}%"))
-    .options(load_only(*fields))
-    .all()
-  )
-
-  search_response["count"] = len(artist_search_results)
-
-  for result in artist_search_results:
-        item = {
-            "id": result.id,
-            "name": result.name,
-        }
-        search_response["data"].append(item)
+  results = {
+    "count": len(artists),
+    "data": [{'id': artist.id, 'name': artist.name } for artist in artists]
+  }
 
   return render_template(
         "pages/search_venues.html",
-        results=search_response,
+        results=results,
         search_term=request.form.get("search_term", ""),
     )
 
@@ -317,16 +307,18 @@ def search_artists():
 def show_artist(artist_id):
     artist = Artist.query.get(artist_id)
 
-
+    # Checks start time to differentiate between past and upcoming event 
+    # Filters through and seperates them and storesin a variable 
     get_past_shows = list(filter(lambda x: x.start_time < datetime.today(), artist.shows))
     get_upcoming_shows = list(filter(lambda x: x.start_time >= datetime.today(), artist.shows))
-    past_shows = list(map(lambda x: x.show_artist(), get_past_shows))
-    upcoming_shows = list(map(lambda x: x.show_artist(), get_upcoming_shows))
 
-    artist.past_shows = past_shows
-    artist.upcoming_shows = upcoming_shows
-    artist.past_shows_count = len(past_shows)
-    artist.upcoming_shows_count = len(upcoming_shows)
+    # Maps through past/upcoming shows and fills in the details of the show, including the venue image, hence calling the show_venue() func
+    artist.past_shows = list(map(lambda x: x.show_venue(), get_past_shows))
+    artist.upcoming_shows = list(map(lambda x: x.show_venue(), get_upcoming_shows))
+
+    # Gets count to populate page
+    artist.past_shows_count = len(artist.past_shows)
+    artist.upcoming_shows_count = len(artist.upcoming_shows)
 
     # Formatting 
     artist.genres = artist.genres.replace('{', '').replace('}', '').split(',')
@@ -390,8 +382,9 @@ def show_artist(artist_id):
 def edit_artist(artist_id):
   form = ArtistForm()
 
-  
   artist = Artist.query.get(artist_id)
+
+  # Pre populates fields so the user doesnt have to type everything again, they can just make edits
   form.name.data = artist.name
   artist.name = form.name.data
   form.city.data= artist.city 
@@ -404,26 +397,35 @@ def edit_artist(artist_id):
   form.seeking_venue.data = artist.seeking_venue
   form.seeking_description.data  = artist.seeking_description
 
-  artist = {
-    "id": artist_id,
-    "name": artist.name,
-    "genres": artist.genres,
-    "city": artist.city,
-    "state": artist.state,
-    "phone": artist.phone,
-    "website_link": artist.website_link,
-    "facebook_link": artist.facebook_link,
-    "seeking_venue": artist.seeking_venue,
-    "seeking_description":  artist.seeking_description,
-    "image_link":  artist.image_link,
-  }
   return render_template('forms/edit_artist.html', form=form, artist=artist)
 
-# NOT DONE YET!!!!!!!!
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-  # TODO: take values from the form submitted, and update existing
-  # artist record with ID <artist_id> using the new attributes
+  form = ArtistForm()
+  try:
+
+    artist = Artist.query.get(artist_id)
+
+    artist.name = form.name.data
+    artist.city = form.city.data
+    artist.state = form.state.data
+    artist.phone = form.phone.data
+    artist.genres = request.form.getlist('genres')
+    artist.facebook_link = form.facebook_link.data
+    artist.image_link = form.image_link.data
+    artist.website_link = form.website_link.data
+    artist.seeking_venue = form.seeking_venue.data
+    artist.seeking_description = form.seeking_description.data
+
+    db.session.commit()
+    flash( request.form['name'] + ' was successfully updated!')
+
+  except Exception as e:
+    db.session.rollback()
+    flash('An error occurred.' + request.form['name'] + ' could not be updated.')
+
+  finally:
+    db.session.close()
 
   return redirect(url_for('show_artist', artist_id=artist_id))
 
