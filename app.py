@@ -89,7 +89,6 @@ def create_venue_submission():
   except:
       error = True
       db.session.rollback()
-      print(sys.exc_info())
   finally:
       db.session.close()
       if error:
@@ -123,8 +122,11 @@ def venues():
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
   search_term = request.form.get('search_term')
-  venues = Venue.query.filter(Venue.name.ilike(f'%{search_term}%')).all()
 
+  # Checks if the search term matches any of the Venues name, City or State
+  venues = Venue.query.filter(Venue.name.ilike(f'%{search_term}%') | Venue.city.ilike(f"%{search_term}%") | Venue.state.ilike(f"%{search_term}%")).all()
+
+  # Putting the results in a dict to capture the count and the data to populate the page
   results = {
     "count": len(venues),
     "data": [{'id': venue.id, 'name': venue.name } for venue in venues]
@@ -149,7 +151,7 @@ def show_venue(venue_id):
     # Maps through past/upcoming shows and fills in the details of the show, including the venue image, hence calling the show_artist() func
     venue.past_shows = list(map(lambda x: x.show_artist(), get_past_shows))
     venue.upcoming_shows = list(map(lambda x: x.show_artist(), get_upcoming_shows))
-    
+
     # Gets count to populate page
     venue.past_shows_count = len(venue.past_shows)
     venue.upcoming_shows_count = len(venue.upcoming_shows)
@@ -186,23 +188,25 @@ def edit_venue_submission(venue_id):
   form = VenueForm(request.form)
 
   try:
-      venue = Venue.query.get(venue_id)
-      venue.name = form.name.data
-      venue.city = form.city.data
-      venue.state = form.state.data
-      venue.address = form.address.data
-      venue.phone = form.phone.data
-      venue.website_link = form.website_link.data
-      venue.genres = request.form.getlist('genres')
-      venue.facebook_link = form.facebook_link.data
-      venue.image_link = form.image_link.data
-      venue.seeking_talent = form.seeking_talent.data
-      venue.seeking_description = form.seeking_description.data
+    venue = Venue.query.get(venue_id)
 
-      db.session.add(venue)
-      db.session.commit()
+    # Replaces the orignal data with the updated form data
+    venue.name = form.name.data
+    venue.city = form.city.data
+    venue.state = form.state.data
+    venue.address = form.address.data
+    venue.phone = form.phone.data
+    venue.website_link = form.website_link.data
+    venue.genres = request.form.getlist('genres')
+    venue.facebook_link = form.facebook_link.data
+    venue.image_link = form.image_link.data
+    venue.seeking_talent = form.seeking_talent.data
+    venue.seeking_description = form.seeking_description.data
 
-      flash(request.form['name'] + ' was successfully updated!')
+    db.session.add(venue)
+    db.session.commit()
+
+    flash(request.form['name'] + ' was successfully updated!')
 
   except Exception as e:
     db.session.rollback()
@@ -225,14 +229,13 @@ def delete_venue(venue_id):
     except:
         error = True
         db.session.rollback()
-        print(sys.exe_info())
     finally:
         db.session.close()
         if error:
-          flash('Venue could not be deleted.')
+          flash('Venue could not be deleted. Please try again later')
         else:
           flash('Venue Succesfully deleted')
-          return render_template('pages/home.html')
+    return render_template('pages/home.html')
 
 
 #  ------------------------------------------------------------------------#
@@ -289,15 +292,18 @@ def artists():
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
   search_term = request.form.get('search_term')
-  artists = Artist.query.filter(Artist.name.ilike(f'%{search_term}%')).all()
 
+  # Checks if the search term matches any of the Artists name, City or State
+  artists = Artist.query.filter(Artist.name.ilike(f'%{search_term}%') | Artist.city.ilike(f"%{search_term}%") | Artist.state.ilike(f"%{search_term}%")).all()
+
+  # Putting the results in a dict to capture the count and the data to populate the page
   results = {
     "count": len(artists),
     "data": [{'id': artist.id, 'name': artist.name } for artist in artists]
   }
 
   return render_template(
-        "pages/search_venues.html",
+        "pages/search_artists.html",
         results=results,
         search_term=request.form.get("search_term", ""),
     )
@@ -324,58 +330,6 @@ def show_artist(artist_id):
     artist.genres = artist.genres.replace('{', '').replace('}', '').split(',')
 
     return render_template('pages/show_artist.html', artist=artist)
-
-  # data2={
-  #   "id": 5,
-  #   "name": "Matt Quevedo",
-  #   "genres": ["Jazz"],
-  #   "city": "New York",
-  #   "state": "NY",
-  #   "phone": "300-400-5000",
-  #   "facebook_link": "https://www.facebook.com/mattquevedo923251523",
-  #   "seeking_venue": False,
-  #   "image_link": "https://images.unsplash.com/photo-1495223153807-b916f75de8c5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=334&q=80",
-  #   "past_shows": [{
-  #     "venue_id": 3,
-  #     "venue_name": "Park Square Live Music & Coffee",
-  #     "venue_image_link": "https://images.unsplash.com/photo-1485686531765-ba63b07845a7?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=747&q=80",
-  #     "start_time": "2019-06-15T23:00:00.000Z"
-  #   }],
-  #   "upcoming_shows": [],
-  #   "past_shows_count": 1,
-  #   "upcoming_shows_count": 0,
-  # }
-  # data3={
-  #   "id": 6,
-  #   "name": "The Wild Sax Band",
-  #   "genres": ["Jazz", "Classical"],
-  #   "city": "San Francisco",
-  #   "state": "CA",
-  #   "phone": "432-325-5432",
-  #   "seeking_venue": False,
-  #   "image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-  #   "past_shows": [],
-  #   "upcoming_shows": [{
-  #     "venue_id": 3,
-  #     "venue_name": "Park Square Live Music & Coffee",
-  #     "venue_image_link": "https://images.unsplash.com/photo-1485686531765-ba63b07845a7?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=747&q=80",
-  #     "start_time": "2035-04-01T20:00:00.000Z"
-  #   }, {
-  #     "venue_id": 3,
-  #     "venue_name": "Park Square Live Music & Coffee",
-  #     "venue_image_link": "https://images.unsplash.com/photo-1485686531765-ba63b07845a7?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=747&q=80",
-  #     "start_time": "2035-04-08T20:00:00.000Z"
-  #   }, {
-  #     "venue_id": 3,
-  #     "venue_name": "Park Square Live Music & Coffee",
-  #     "venue_image_link": "https://images.unsplash.com/photo-1485686531765-ba63b07845a7?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=747&q=80",
-  #     "start_time": "2035-04-15T20:00:00.000Z"
-  #   }],
-  #   "past_shows_count": 0,
-  #   "upcoming_shows_count": 3,
-  # }
-  # data = list(filter(lambda d: d['id'] == artist_id, [data1, data2, data3]))[0]
-  # return render_template('pages/show_artist.html', artist=data)
 
 #  Edit Artist 
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
@@ -406,6 +360,7 @@ def edit_artist_submission(artist_id):
 
     artist = Artist.query.get(artist_id)
 
+    # Replaces the orignal data with the updated form data
     artist.name = form.name.data
     artist.city = form.city.data
     artist.state = form.state.data
@@ -439,14 +394,13 @@ def delete_artist(artist_id):
     except:
         error = True
         db.session.rollback()
-        print(sys.exe_info())
     finally:
         db.session.close()
         if error:
-          flash('Artist could not be deleted.')
+          flash('Artist could not be deleted. Please try again later')
         else:
           flash('Artist Succesfully deleted')
-          return render_template('pages/home.html')
+    return render_template('pages/home.html')
 
 
 
@@ -463,11 +417,12 @@ def create_shows():
 
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
+  form = ShowForm(request.form)
   error = False
   try:
       show = Show()
-      show.artist_id= request.form['artist_id']
-      show.venue_id = request.form['venue_id']
+      show.artist_id= form.artist_id.data
+      show.venue_id = form.venue_id.data
       show.start_time = request.form['start_time']
 
       db.session.add(show)
