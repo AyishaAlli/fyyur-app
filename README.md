@@ -96,3 +96,7 @@ python3 app.py
 
 4. **Verify on the Browser**<br>
    Navigate to project homepage [http://127.0.0.1:5000/](http://127.0.0.1:5000/) or [http://localhost:5000](http://localhost:5000)
+
+## Acknowledgements
+
+Special thanks to [Udacity](https://www.udacity.com/) for providing this project as part of the Nanodegree. I have learnt so much building it out in such a short space of time and really enjoyed it.
