@@ -142,19 +142,30 @@ def search_venues():
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
     venue = Venue.query.get(venue_id)
+    past_shows, upcoming_shows = [], []
 
-    # Checks start time to differentiate between past and upcoming event 
-    # Filters through and seperates them and storesin a variable 
-    get_past_shows = list(filter(lambda x: x.start_time < datetime.today(), venue.shows))
-    get_upcoming_shows = list(filter(lambda x: x.start_time >= datetime.today(), venue.shows))
+    # Get Artist Information form each show 
+    for show in venue.shows:
+      associated_artist = db.session.query(Artist.id, Artist.name, Artist.image_link).filter_by(id = show.artist_id).first()
+      
+      # collate artist data 
+      associated_artist_data = {'artist_id': associated_artist.id, 
+                'artist_name': associated_artist.name, 
+                'artist_image_link': associated_artist.image_link,
+                'start_time': str(show.start_time)}
+      
+      # Differentiate between a past and future show 
+      if show.start_time > datetime.now():
+        upcoming_shows.append(associated_artist_data)
+      else:
+        past_shows.append(associated_artist_data)
+    
 
-    # Maps through past/upcoming shows and fills in the details of the show, including the venue image, hence calling the show_artist() func
-    venue.past_shows = list(map(lambda x: x.show_artist(), get_past_shows))
-    venue.upcoming_shows = list(map(lambda x: x.show_artist(), get_upcoming_shows))
-
-    # Gets count to populate page
-    venue.past_shows_count = len(venue.past_shows)
-    venue.upcoming_shows_count = len(venue.upcoming_shows)
+    # Get data and count to populate page
+    venue.past_shows = past_shows
+    venue.upcoming_shows = upcoming_shows
+    venue.past_shows_count = len(past_shows)
+    venue.upcoming_shows_count = len(upcoming_shows)
 
     # Formatting 
     venue.genres = venue.genres.replace('{', '').replace('}', '').split(',')
@@ -223,9 +234,10 @@ def edit_venue_submission(venue_id):
 @app.route('/venues/<venue_id>/delete', methods=['GET'])
 def delete_venue(venue_id):
     error = False
-    try:
-        Venue.query.filter_by(id=venue_id).delete()
-        db.session.commit()
+    try: 
+        venue = Venue.query.filter_by(id=venue_id)
+
+        db.session.delete(venue)
     except:
         error = True
         db.session.rollback()
@@ -312,19 +324,30 @@ def search_artists():
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
     artist = Artist.query.get(artist_id)
+    past_shows, upcoming_shows = [], []
 
-    # Checks start time to differentiate between past and upcoming event 
-    # Filters through and seperates them and storesin a variable 
-    get_past_shows = list(filter(lambda x: x.start_time < datetime.today(), artist.shows))
-    get_upcoming_shows = list(filter(lambda x: x.start_time >= datetime.today(), artist.shows))
+    # Get Venue Information form each show 
+    for show in artist.shows:
+      associated_venue = db.session.query(Venue.id, Venue.name, Venue.image_link).filter_by(id = show.artist_id).first()
+      
+      # collate artist data 
+      associated_venue_data = {'artist_id': associated_venue.id, 
+                'artist_name': associated_venue.name, 
+                'artist_image_link': associated_venue.image_link,
+                'start_time': str(show.start_time)}
+      
+      # Differentiate between a past and future show 
+      if show.start_time > datetime.now():
+        upcoming_shows.append(associated_venue_data)
+      else:
+        past_shows.append(associated_venue_data)
+    
 
-    # Maps through past/upcoming shows and fills in the details of the show, including the venue image, hence calling the show_venue() func
-    artist.past_shows = list(map(lambda x: x.show_venue(), get_past_shows))
-    artist.upcoming_shows = list(map(lambda x: x.show_venue(), get_upcoming_shows))
-
-    # Gets count to populate page
-    artist.past_shows_count = len(artist.past_shows)
-    artist.upcoming_shows_count = len(artist.upcoming_shows)
+    # Get data and count to populate page
+    artist.past_shows = past_shows
+    artist.upcoming_shows = upcoming_shows
+    artist.past_shows_count = len(past_shows)
+    artist.upcoming_shows_count = len(upcoming_shows)
 
     # Formatting 
     artist.genres = artist.genres.replace('{', '').replace('}', '').split(',')
