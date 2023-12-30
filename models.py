@@ -64,21 +64,3 @@ class Show(db.Model):
 
     def __repr__(self):
       return f'<Show id:{self.id} venue_id:{self.venue_id} artist_id:{self.artist_id}>'
-    
-    def show_artist(self):
-        """ dictinary of artists for the show """
-        return {
-            'artist_id': self.artist_id,
-            'artist_name': self.artist.name,
-            'artist_image_link': self.artist.image_link,
-            'start_time': self.start_time.strftime('%Y-%m-%d %H:%M:%S')
-        }
-
-    def show_venue(self):
-        """ dictinary of venues for the show """
-        return {
-            'venue_id': self.venue_id,
-            'venue_name': self.venue.name,
-            'venue_image_link': self.venue.image_link,
-            'start_time': self.start_time.strftime('%Y-%m-%d %H:%M:%S')
-        }
