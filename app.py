@@ -235,9 +235,8 @@ def edit_venue_submission(venue_id):
 def delete_venue(venue_id):
     error = False
     try: 
-        venue = Venue.query.filter_by(id=venue_id)
-
-        db.session.delete(venue)
+        Venue.query.filter_by(id=venue_id).delete()
+        db.session.commit()
     except:
         error = True
         db.session.rollback()
@@ -328,7 +327,7 @@ def show_artist(artist_id):
 
     # Get Venue Information form each show 
     for show in artist.shows:
-      associated_venue = db.session.query(Venue.id, Venue.name, Venue.image_link).filter_by(id = show.artist_id).first()
+      associated_venue = db.session.query(Venue.id, Venue.name, Venue.image_link).filter_by(id = show.venue_id).first()
       
       # collate artist data 
       associated_venue_data = {'artist_id': associated_venue.id, 
@@ -446,7 +445,7 @@ def create_show_submission():
       show = Show()
       show.artist_id= form.artist_id.data
       show.venue_id = form.venue_id.data
-      show.start_time = request.form['start_time']
+      show.start_time = form.start_time.data
 
       db.session.add(show)
       db.session.commit()
@@ -462,7 +461,6 @@ def create_show_submission():
           flash('This show was successfully listed!')
 
   return render_template('pages/home.html')
-
 #  View All Shows
 @app.route('/shows')
 def shows():
