@@ -104,14 +104,14 @@ SQLALCHEMY_DATABASE_URI = 'postgresql://USERNAME:PASSWORD@localhost:5432/fyyur' 
 
 7. **Make Migrations:**
 
-```
-flask db migrate
+```bash
+flask db migrate # after running this it may say 'ERROR [flask_migrate] Error: Target database is not up to date.' Please ignore and move on to the next command.
 flask db upgrade
 ```
 
-8. **Run the development server:**
+1. **Run the development server:**
 
-```python
+```bash
 python3 app.py
 ```
 
