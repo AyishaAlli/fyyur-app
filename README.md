@@ -17,7 +17,7 @@ A user can:
 - create new venue listing via the New Venue Page.
 - create new artist listing via the New Artist Page.
 - Create a new show with the ID of an existing Artist and Venue.
-- cannot submit an invalid form submission (e.g. using an invalid State enum, or with required fields missing; missing city, missing name, or missing genre is not required).
+- cannot submit an invalid form submission (e.g. using an invalid State enum, or with required fields missing; missing city, missing name, or missing genre).
 - Delete either an artist or venue on their description page.
   - If a show belongs to the Artist/Venue, that will also be deleted.
 
