@@ -15,7 +15,8 @@ A user can:
 - view a Venues Page with venue information from the database.
 - view an Artist Page with artist information from the database.
 - create new venue listing via the New Venue Page.
-- create new artist listing via the New Artist Page.
+- create/edit new artist listing via the New Artist Page.
+- Update the details of both the Artist or venue
 - Create a new show with the ID of an existing Artist and Venue.
 - cannot submit an invalid form submission (e.g. using an invalid State enum, or with required fields missing; missing city, missing name, or missing genre).
 - Delete either an artist or venue on their description page.
