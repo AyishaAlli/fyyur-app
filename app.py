@@ -143,24 +143,27 @@ def search_venues():
 def show_venue(venue_id):
     venue = Venue.query.get(venue_id)
     past_shows, upcoming_shows = [], []
-
-    # Get Artist Information form each show 
-    for show in venue.shows:
-      associated_artist = db.session.query(Artist.id, Artist.name, Artist.image_link).filter_by(id = show.artist_id).first()
-      
-      # collate artist data 
-      associated_artist_data = {'artist_id': associated_artist.id, 
-                'artist_name': associated_artist.name, 
-                'artist_image_link': associated_artist.image_link,
-                'start_time': str(show.start_time)}
-      
-      # Differentiate between a past and future show 
-      if show.start_time > datetime.now():
-        upcoming_shows.append(associated_artist_data)
-      else:
-        past_shows.append(associated_artist_data)
+    shows = db.session.query(Artist, Show.start_time).join(Show).filter(Show.venue_id == venue_id)
     
-
+    past_shows_count = 0
+    upcoming_shows_count = 0
+    for artist, start_time in shows:
+      artist_information = {
+                'artist_id': artist.id,
+                'artist_name': artist.name,
+                'artist_image_link': artist.image_link,
+                'start_time': str(start_time)
+            }
+     
+      if start_time < datetime.now():
+          past_shows.append(artist_information)
+          past_shows_count += 1
+      else:
+            upcoming_shows.append(artist_information)
+            upcoming_shows_count += 1
+ 
+    
+    
     # Get data and count to populate page
     venue.past_shows = past_shows
     venue.upcoming_shows = upcoming_shows
@@ -324,22 +327,24 @@ def search_artists():
 def show_artist(artist_id):
     artist = Artist.query.get(artist_id)
     past_shows, upcoming_shows = [], []
-
-    # Get Venue Information form each show 
-    for show in artist.shows:
-      associated_venue = db.session.query(Venue.id, Venue.name, Venue.image_link).filter_by(id = show.venue_id).first()
-      
-      # collate artist data 
-      associated_venue_data = {'artist_id': associated_venue.id, 
-                'artist_name': associated_venue.name, 
-                'artist_image_link': associated_venue.image_link,
-                'start_time': str(show.start_time)}
-      
-      # Differentiate between a past and future show 
-      if show.start_time > datetime.now():
-        upcoming_shows.append(associated_venue_data)
+    shows = db.session.query(Venue, Show.start_time).join(Show).filter(Show.artist_id == artist_id)
+    
+    past_shows_count = 0
+    upcoming_shows_count = 0
+    for venue, start_time in shows:
+      venue_information = {
+                'venue_id': venue.id,
+                'venue_name': venue.name,
+                'venue_image_link': venue.image_link,
+                'start_time': str(start_time)
+            }
+     
+      if start_time < datetime.now():
+          past_shows.append(venue_information)
+          past_shows_count += 1
       else:
-        past_shows.append(associated_venue_data)
+            upcoming_shows.append(venue_information)
+            upcoming_shows_count += 1
     
 
     # Get data and count to populate page
